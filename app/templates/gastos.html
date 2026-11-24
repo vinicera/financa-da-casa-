@@ -1,54 +1,56 @@
 {% extends "base.html" %}
+{% from "_icones.html" import icone %}
 {% block titulo %}Gastos{% endblock %}
+{% block h1 %}Gastos{% endblock %}
 {% block conteudo %}
 {% include "_ciclo.html" %}
 
-<section class="bloco">
+<div style="text-align:center; margin: 20px 0 4px">
+  <p class="rotulo">{{ gastos | length }} gasto(s) no ciclo</p>
+  <p class="num" style="font-size:36px; line-height:40px; font-weight:600; margin:6px 0 0">{{ total }}</p>
+</div>
+
+<details class="cartao">
+  <summary><span class="ladrilho">{{ icone("mais") }}</span><strong>Lançar gasto</strong><span class="seta">{{ icone("proximo") }}</span></summary>
   <form method="post" action="/gastos" class="formulario">
     <input type="hidden" name="voltar" value="{{ url_atual }}">
-    <input name="descricao" placeholder="Descrição" required>
-    <input name="valor" placeholder="Valor (ex.: 45,90)" inputmode="decimal" required>
-    <input name="data" type="date" value="{{ hoje.isoformat() }}" required>
-    <select name="caixinha_id">
-      <option value="">Sem caixinha</option>
-      {% for c in casa.caixinhas %}<option value="{{ c.id }}">{{ c.icone }} {{ c.nome }}</option>{% endfor %}
-    </select>
-    <button type="submit">Lançar gasto</button>
-  </form>
-</section>
-
-<section class="bloco">
-  <div class="cabecalho-lista">
-    <h2>{{ gastos | length }} gasto(s) · {{ total }}</h2>
-    <form method="get">
-      <input type="hidden" name="ciclo" value="{{ ciclo.inicio.isoformat() }}">
-      <select name="ordem" onchange="this.form.submit()">
-        {% for chave, nome in ordens.items() %}
-          <option value="{{ chave }}" {% if chave == ordem %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
+    <input name="valor" class="valor-grande" placeholder="R$ 0,00" inputmode="decimal" required aria-label="Valor">
+    <input name="descricao" placeholder="O que foi?" required aria-label="Descrição">
+    <div class="dupla">
+      <input name="data" type="date" value="{{ hoje.isoformat() }}" required aria-label="Data">
+      <select name="caixinha_id" aria-label="Caixinha">
+        <option value="">Sem caixinha</option>
+        {% for c in casa.caixinhas %}<option value="{{ c.id }}">{{ c.icone }} {{ c.nome }}</option>{% endfor %}
       </select>
-      <noscript><button type="submit">Ordenar</button></noscript>
-    </form>
-  </div>
-  <ul class="lista">
-    {% for g in gastos %}
-      {% set cx = casa.buscar_caixinha(g.caixinha_id) %}
-      <li>
-        <span>
-          <strong>{{ g.descricao }}</strong>
-          <small>{{ g.data | data }} · {{ cx.icone ~ " " ~ cx.nome if cx else "Sem caixinha" }}</small>
-        </span>
-        <span class="acoes">
-          {{ g.valor }}
-          <form method="post" action="/gastos/{{ g.id }}/excluir">
-            <input type="hidden" name="voltar" value="{{ url_atual }}">
-            <button class="discreto" type="submit" title="Excluir">✕</button>
-          </form>
-        </span>
-      </li>
-    {% else %}
-      <li class="vazio">Nenhum gasto neste ciclo.</li>
-    {% endfor %}
-  </ul>
-</section>
+    </div>
+    <button type="submit" class="botao">Lançar</button>
+  </form>
+</details>
+
+<h2 class="titulo-secao">Lançamentos</h2>
+<nav class="ordem" aria-label="Ordenar">
+  {% for chave, nome in ordens.items() %}
+    <a href="?ciclo={{ ciclo.inicio.isoformat() }}&ordem={{ chave }}" {% if chave == ordem %}class="ativo"{% endif %}>{{ nome }}</a>
+  {% endfor %}
+</nav>
+
+<div class="cartao" style="margin-top:12px">
+  {% for g in gastos %}
+    {% set cx = casa.buscar_caixinha(g.caixinha_id) %}
+    <div class="linha">
+      <span class="ladrilho">{{ cx.icone if cx else "❔" }}</span>
+      <div class="meio">
+        <span class="titulo">{{ g.descricao }}</span>
+        <span class="sub">{{ g.data | dia_mes }} · {{ cx.nome if cx else "Sem caixinha" }}</span>
+      </div>
+      <span class="num" style="font-weight:600">{{ g.valor }}</span>
+      <form method="post" action="/gastos/{{ g.id }}/excluir">
+        <input type="hidden" name="voltar" value="{{ url_atual }}">
+        <button class="botao-x" type="submit" aria-label="Excluir {{ g.descricao }}">{{ icone("fechar") }}</button>
+      </form>
+    </div>
+  {% else %}
+    <p class="vazio">Nenhum gasto neste ciclo.</p>
+  {% endfor %}
+</div>
 {% endblock %}

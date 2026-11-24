@@ -8,6 +8,21 @@ dinheiro ainda está **livre** no ciclo e se os gastos estão no ritmo.
 Tecnologias: Python 3.11+, FastAPI (servidor web e API), Jinja2 (páginas HTML)
 e pytest (testes). Os dados ficam num arquivo JSON.
 
+## Telas
+
+<p align="center">
+  <img src="prints/01-resumo.png" width="240" alt="Resumo do ciclo com o anel do dinheiro">
+  <img src="prints/02-gastos.png" width="240" alt="Lista de gastos do ciclo">
+  <img src="prints/05-caixinhas.png" width="240" alt="Caixinhas agrupadas por tipo">
+</p>
+<p align="center">
+  <img src="prints/04-entradas.png" width="240" alt="Entradas do ciclo">
+  <img src="prints/06-parcelas.png" width="240" alt="Parcelas e próximos vencimentos">
+  <img src="prints/03-gastos-por-maior-valor.png" width="240" alt="Gastos ordenados por maior valor">
+</p>
+
+Todas as telas usam dados fictícios gerados por `python -m app.exemplo`.
+
 ## Como rodar
 
 ```bash
@@ -39,7 +54,7 @@ pytest
 
 | Tela | O que faz |
 |---|---|
-| **Resumo** | Dinheiro livre do ciclo, quanto dá para gastar por dia, ritmo de gasto, situação de cada caixinha e próximos vencimentos. |
+| **Resumo** | Anel do dinheiro do ciclo (gasto, nas caixinhas, guardado e livre), quanto dá para gastar por dia e ritmo de gasto. |
 | **Gastos** | Lança, exclui e ordena gastos (data, valor ou descrição). Navega entre ciclos. |
 | **Entradas** | Registra renda e entradas extras do ciclo. |
 | **Caixinhas** | Cria caixinhas de três tipos: conta fixa, variável e reserva. |
@@ -75,8 +90,9 @@ app/
 ├── main.py              Montagem da aplicação FastAPI
 ├── exemplo.py           Dados de exemplo
 ├── templates/           HTML (Jinja2)
-└── static/              CSS
+└── static/              CSS, logo e ícone
 tests/                   Testes automatizados (pytest)
+prints/                  Capturas de tela
 ```
 
 ## Conceitos aplicados

@@ -1,39 +1,56 @@
 {% extends "base.html" %}
+{% from "_icones.html" import icone %}
 {% block titulo %}Caixinhas{% endblock %}
+{% block h1 %}Caixinhas{% endblock %}
 {% block conteudo %}
-<section class="bloco">
-  <h2>Nova caixinha</h2>
-  <form method="post" action="/caixinhas" class="formulario">
-    <input name="icone" value="📦" maxlength="4" class="curto" aria-label="Ícone">
-    <input name="nome" placeholder="Nome (ex.: Mercado)" required>
-    <select name="tipo">
-      {% for chave, nome in tipos.items() %}<option value="{{ chave }}">{{ nome }}</option>{% endfor %}
-    </select>
-    <input name="aporte" placeholder="Aporte por ciclo (vazio = sem aporte)" inputmode="decimal">
-    <button type="submit">Criar</button>
-  </form>
-  <p class="ajuda">
-    <strong>Conta fixa</strong>: valor previsível (aluguel). <strong>Variável</strong>: oscila (mercado, lazer).
-    <strong>Reserva</strong>: dinheiro guardado. Sem aporte, os gastos saem direto do dinheiro livre.
-  </p>
-</section>
 
-<section class="bloco">
-  <h2>Caixinhas neste ciclo</h2>
-  <ul class="lista">
-    {% for l in r.linhas %}
-      <li>
-        <span>
-          <strong>{{ l.caixinha.icone }} {{ l.caixinha.nome }}</strong>
-          <small>{{ l.caixinha.nome_do_tipo }} · aporte {{ l.caixinha.aporte or "—" }} · disponível {{ l.disponivel }}</small>
-        </span>
+<div style="text-align:center; margin: 4px 0">
+  <p class="rotulo">Separado por ciclo</p>
+  <p class="num" style="font-size:36px; line-height:40px; font-weight:600; margin:6px 0 0">{{ r.previsto + r.guardado }}</p>
+  <p class="apoio" style="margin-top:6px">{{ r.linhas | length }} caixinha(s) · {{ r.guardado }} vão para reservas</p>
+</div>
+
+{% for tipo, nome in tipos.items() %}
+  {% set linhas = r.linhas | selectattr("caixinha.tipo", "equalto", tipo) | list %}
+  {% if linhas %}
+  <h2 class="titulo-secao">{{ {"conta_fixa": "Contas fixas", "variavel": "Variáveis", "reserva": "Reservas"}[tipo] }}</h2>
+  <div class="cartao" style="margin-top:0">
+    {% for l in linhas %}
+      <div class="linha">
+        <span class="ladrilho {% if tipo == 'reserva' %}reserva{% endif %}">{{ l.caixinha.icone }}</span>
+        <div class="meio">
+          <span class="titulo">{{ l.caixinha.nome }}</span>
+          <span class="sub">{% if l.caixinha.aporte %}aporte {{ l.caixinha.aporte }}{% else %}sem aporte · gasta do livre{% endif %}</span>
+        </div>
+        <div class="direita">
+          <span class="num {% if l.disponivel.centavos < 0 %}negativo{% endif %}">{{ l.disponivel }}</span>
+          <small>disponível</small>
+        </div>
         <form method="post" action="/caixinhas/{{ l.caixinha.id }}/excluir">
-          <button class="discreto" type="submit" title="Excluir">✕</button>
+          <button class="botao-x" type="submit" aria-label="Excluir {{ l.caixinha.nome }}">{{ icone("fechar") }}</button>
         </form>
-      </li>
-    {% else %}
-      <li class="vazio">Nenhuma caixinha ainda.</li>
+      </div>
     {% endfor %}
-  </ul>
-</section>
+  </div>
+  {% endif %}
+{% endfor %}
+
+<details class="cartao" {% if not r.linhas %}open{% endif %}>
+  <summary><span class="ladrilho">{{ icone("mais") }}</span><strong>Nova caixinha</strong><span class="seta">{{ icone("proximo") }}</span></summary>
+  <form method="post" action="/caixinhas" class="formulario">
+    <div style="display:grid; grid-template-columns:64px 1fr; gap:10px">
+      <input name="icone" value="📦" maxlength="4" aria-label="Ícone" style="text-align:center; font-size:22px">
+      <input name="nome" placeholder="Nome (ex.: Mercado)" required aria-label="Nome">
+    </div>
+    <div class="dupla">
+      <select name="tipo" aria-label="Tipo">
+        {% for chave, nome in tipos.items() %}<option value="{{ chave }}">{{ nome }}</option>{% endfor %}
+      </select>
+      <input name="aporte" placeholder="Aporte (opcional)" inputmode="decimal" aria-label="Aporte por ciclo">
+    </div>
+    <p class="apoio"><strong>Conta fixa</strong>: valor previsível. <strong>Variável</strong>: oscila.
+      <strong>Reserva</strong>: dinheiro guardado. Sem aporte, o gasto sai direto do livre.</p>
+    <button type="submit" class="botao">Criar caixinha</button>
+  </form>
+</details>
 {% endblock %}

@@ -1,8 +1,9 @@
+{% from "_icones.html" import icone %}
 <div class="ciclo-nav">
-  <a href="?ciclo={{ ciclo.anterior().inicio.isoformat() }}" aria-label="Ciclo anterior">‹</a>
+  <a class="botao-redondo" href="?ciclo={{ ciclo.anterior().inicio.isoformat() }}" aria-label="Ciclo anterior">{{ icone("anterior") }}</a>
   <div>
     <strong>{{ ciclo.rotulo }}</strong>
-    <small>{{ ciclo.intervalo }}</small>
+    <span class="apoio">{{ ciclo.intervalo }}</span>
   </div>
-  <a href="?ciclo={{ ciclo.proximo().inicio.isoformat() }}" aria-label="Próximo ciclo">›</a>
+  <a class="botao-redondo" href="?ciclo={{ ciclo.proximo().inicio.isoformat() }}" aria-label="Próximo ciclo">{{ icone("proximo") }}</a>
 </div>

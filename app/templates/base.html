@@ -1,32 +1,49 @@
+{% from "_icones.html" import icone %}
 <!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0b10">
   <title>{% block titulo %}{% endblock %} · Finança da Casa</title>
-  <link rel="stylesheet" href="/static/estilo.css">
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/static/estilo.css?v=3">
 </head>
 <body>
-  <header class="topo">
-    <a class="marca" href="/">🏡 {{ casa.nome }}</a>
-    <nav>
-      {% for url, nome in [("/", "Resumo"), ("/gastos", "Gastos"), ("/entradas", "Entradas"), ("/caixinhas", "Caixinhas"), ("/parcelas", "Parcelas")] %}
-        <a href="{{ url }}" {% if caminho == url %}class="ativo"{% endif %}>{{ nome }}</a>
+  <div class="tela">
+    <header class="cabecalho">
+      <div class="marca">
+        <img src="/static/logo.png" alt="">
+        <div style="min-width:0">
+          <p class="rotulo">{% block rotulo %}{{ casa.nome }}{% endblock %}</p>
+          <h1>{% block h1 %}{% endblock %}</h1>
+        </div>
+      </div>
+      <form method="post" action="/desfazer">
+        <input type="hidden" name="voltar" value="{{ url_atual }}">
+        <button type="submit" class="botao-redondo" {% if not casa.pode_desfazer %}disabled{% endif %}
+          aria-label="Desfazer"
+          title="{% if casa.ultima_acao %}Desfazer: {{ casa.ultima_acao.descricao }}{% else %}Nada para desfazer{% endif %}">{{ icone("desfazer") }}</button>
+      </form>
+    </header>
+
+    {% block conteudo %}{% endblock %}
+
+    <footer>Finança da Casa · <a href="/docs">API</a></footer>
+  </div>
+
+  {% if erro %}<p class="aviso erro" role="alert">{{ erro }}</p>{% endif %}
+  {% if ok %}<p class="aviso ok" role="status">{{ ok }}</p>{% endif %}
+
+  <div class="dock">
+    <nav aria-label="Navegação principal">
+      {% for url, nome, ic in [("/", "Resumo", "inicio"), ("/gastos", "Gastos", "gastos"), ("/entradas", "Entradas", "entradas"), ("/caixinhas", "Caixinhas", "caixinhas"), ("/parcelas", "Parcelas", "parcelas")] %}
+        <a href="{{ url }}" {% if caminho == url %}class="ativo" aria-current="page"{% endif %}>{{ icone(ic) }}<span>{{ nome }}</span></a>
       {% endfor %}
     </nav>
-    <form method="post" action="/desfazer" class="desfazer">
-      <input type="hidden" name="voltar" value="{{ url_atual }}">
-      <button type="submit" {% if not casa.pode_desfazer %}disabled{% endif %}
-        title="{% if casa.ultima_acao %}Desfazer: {{ casa.ultima_acao.descricao }}{% else %}Nada para desfazer{% endif %}">↶ Desfazer</button>
-    </form>
-  </header>
-
-  <main>
-    {% if erro %}<p class="aviso erro">{{ erro }}</p>{% endif %}
-    {% if ok %}<p class="aviso ok">{{ ok }}</p>{% endif %}
-    {% block conteudo %}{% endblock %}
-  </main>
-
-  <footer>Finança da Casa · <a href="/docs">API</a></footer>
+  </div>
 </body>
 </html>

@@ -13,7 +13,7 @@ from .repositorio import RepositorioJson
 
 def criar_casa_exemplo(hoje: date | None = None) -> Casa:
     hoje = hoje or date.today()
-    casa = Casa("Casa da República", dia_inicio_ciclo=1)
+    casa = Casa("Nossa casa", dia_inicio_ciclo=1)
     ciclo = casa.ciclo_da_data(hoje)
     inicio = ciclo.inicio
 

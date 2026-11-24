@@ -78,10 +78,23 @@ class Resumo:
     pct_gasto: int
     situacao: str
     """``"no_ritmo"``, ``"adiantado"`` ou ``"sobrando"``."""
+    gasto_consumo: Dinheiro
+    """Gasto fora das reservas (o que já saiu da renda)."""
+    reservado: Dinheiro
+    """Aporte das caixinhas de consumo que ainda não foi gasto."""
+    guardado: Dinheiro
+    """Aporte das reservas neste ciclo."""
 
     @property
     def entrou(self) -> Dinheiro:
         return self.renda + self.extras
+
+    @property
+    def estado(self) -> str:
+        """Clima geral do ciclo: ``"ok"``, ``"atencao"`` ou ``"critico"``."""
+        if self.excedente:
+            return "critico"
+        return "atencao" if self.situacao == "adiantado" else "ok"
 
 
 class Casa:
@@ -286,9 +299,15 @@ class Casa:
         linhas: list[LinhaCaixinha] = []
         alocado = sem_caixinha  # gasto sem caixinha sai direto do livre
         previsto = gasto_no_previsto = Dinheiro.zero()
+        gasto_consumo, reservado, guardado = sem_caixinha, Dinheiro.zero(), Dinheiro.zero()
         for c in self.caixinhas:
             gasto = gastos.get(c.id, Dinheiro.zero())
             alocado += c.alocado_da_renda(gasto)  # polimorfismo: cada tipo calcula do seu jeito
+            if c.acumula_entre_ciclos():
+                guardado += c.aporte or Dinheiro.zero()
+            else:
+                gasto_consumo += gasto
+                reservado += c.disponivel(gasto).positivo_ou_zero()
             if c.entra_no_ritmo() and c.aporte is not None:
                 previsto += c.aporte
                 gasto_no_previsto += gasto
@@ -336,6 +355,9 @@ class Casa:
             pct_do_ciclo=pct_ciclo,
             pct_gasto=pct_gasto,
             situacao=situacao,
+            gasto_consumo=gasto_consumo,
+            reservado=reservado,
+            guardado=guardado,
         )
 
     # ======================================================================

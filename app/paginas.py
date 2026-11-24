@@ -1,5 +1,6 @@
 """Páginas HTML (formulários simples, sem JavaScript)."""
 
+import math
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -11,7 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from .estado import Estado
-from .modelos import Caixinha, Casa, Dinheiro, Entrada, ErroDeNegocio
+from .modelos import Caixinha, Casa, Dinheiro, Entrada, ErroDeNegocio, Resumo
 from .modelos.casa import ORDENS_DE_GASTOS
 
 PASTA_TEMPLATES = Path(__file__).parent / "templates"
@@ -23,6 +24,45 @@ NOMES_DAS_ORDENS = {
     "menor_valor": "Menor valor",
     "descricao": "Descrição (A-Z)",
 }
+
+
+COR_GASTO = "var(--gasto)"
+COR_RESERVADO = "#8178e0"
+COR_GUARDADO = "#ab8b22"
+COR_LIVRE = "var(--primaria)"
+RAIO_DO_ANEL = 100
+VAO_ENTRE_FATIAS = 0.008  # fração da volta
+
+
+def montar_anel(r: Resumo) -> dict[str, Any]:
+    """Fatias do anel do dinheiro (SVG): gasto, reservado, guardado e livre."""
+    fatias = [
+        ("Já gasto", r.gasto_consumo, COR_GASTO),
+        ("Nas caixinhas", r.reservado, COR_RESERVADO),
+        ("Guardado", r.guardado, COR_GUARDADO),
+        ("Livre", r.livre, COR_LIVRE),
+    ]
+    total = sum(v.centavos for _, v, _ in fatias if v.centavos > 0)
+    visiveis = [f for f in fatias if f[1].centavos > 0]
+    vao = VAO_ENTRE_FATIAS if len(visiveis) > 1 else 0
+    circunferencia = 2 * math.pi * RAIO_DO_ANEL
+    inicio = 0.0
+    arcos = []
+    for rotulo, valor, cor in visiveis:
+        fracao = valor.centavos / total
+        arcos.append(
+            {
+                "cor": cor,
+                "traco": f"{circunferencia * max(0.0, fracao - vao):.2f} {circunferencia:.2f}",
+                "giro": f"{-90 + (inicio + vao / 2) * 360:.2f}",
+            }
+        )
+        inicio += fracao
+    legenda = [
+        {"rotulo": rotulo, "valor": valor, "cor": cor, "pct": round(valor.centavos * 100 / total) if total else 0}
+        for rotulo, valor, cor in fatias
+    ]
+    return {"arcos": arcos, "legenda": legenda, "raio": RAIO_DO_ANEL}
 
 
 def _destino_seguro(voltar: str | None, padrao: str) -> str:
@@ -80,12 +120,13 @@ def criar_rotas_paginas(estado: Estado) -> APIRouter:
     @rotas.get("/", response_class=HTMLResponse)
     def inicio(request: Request, ciclo: str | None = None) -> HTMLResponse:
         c = estado.ciclo(ciclo)
+        r = estado.casa.resumo(estado.hoje(), c)
         return pagina(
             request,
             "resumo.html",
-            r=estado.casa.resumo(estado.hoje(), c),
+            r=r,
+            anel=montar_anel(r),
             ciclo=c,
-            vencimentos=estado.casa.proximos_vencimentos(5),
         )
 
     @rotas.post("/configuracao")
@@ -211,7 +252,8 @@ def criar_rotas_paginas(estado: Estado) -> APIRouter:
             request,
             "parcelas.html",
             parcelamentos=estado.casa.parcelamentos,
-            vencimentos=estado.casa.proximos_vencimentos(8),
+            vencimentos=estado.casa.proximos_vencimentos(5),
+            falta_formatada=sum((p.falta_pagar for p in estado.casa.parcelamentos), Dinheiro.zero()),
         )
 
     @rotas.post("/parcelas")

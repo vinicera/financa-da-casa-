@@ -1,54 +1,73 @@
 {% extends "base.html" %}
+{% from "_icones.html" import icone %}
 {% block titulo %}Parcelas{% endblock %}
+{% block h1 %}Parcelas{% endblock %}
 {% block conteudo %}
-<section class="bloco">
-  <h2>Novo parcelamento</h2>
-  <form method="post" action="/parcelas" class="formulario">
-    <input name="descricao" placeholder="Descrição (ex.: Geladeira)" required>
-    <input name="valor_total" placeholder="Valor total" inputmode="decimal" required>
-    <input name="total_parcelas" type="number" min="1" max="420" placeholder="Nº de parcelas" required>
-    <label>1º vencimento <input name="primeiro_vencimento" type="date" value="{{ hoje.isoformat() }}" required></label>
-    <button type="submit">Criar</button>
-  </form>
-</section>
+<div style="text-align:center; margin: 4px 0">
+  <p class="rotulo">Falta pagar</p>
+  <p class="num" style="font-size:36px; line-height:40px; font-weight:600; margin:6px 0 0">{{ falta_formatada }}</p>
+  <p class="apoio" style="margin-top:6px">{{ parcelamentos | length }} parcelamento(s)</p>
+</div>
 
 {% if vencimentos %}
-<section class="bloco">
-  <h2>Próximos vencimentos</h2>
-  <ul class="lista">
-    {% for p in vencimentos %}
-      <li class="{{ p.status(hoje) }}">
-        <span><strong>{{ p.descricao }} {{ p.numero }}/{{ p.total }}</strong>
-          <small>vence {{ p.vencimento | data }}{% if p.status(hoje) == "atrasada" %} · atrasada{% endif %}</small></span>
-        <span class="acoes">{{ p.valor }}
-          <form method="post" action="/parcelas/{{ p.parcelamento_id }}/pagar">
-            <input type="hidden" name="numero" value="{{ p.numero }}">
-            <button type="submit">Pagar</button>
-          </form>
-        </span>
-      </li>
-    {% endfor %}
-  </ul>
-</section>
+<h2 class="titulo-secao">Próximos vencimentos</h2>
+<div class="cartao" style="margin-top:0">
+  {% for p in vencimentos %}
+    {% set atrasada = p.status(hoje) == "atrasada" %}
+    <div class="linha">
+      <div class="meio">
+        <span class="titulo">{{ p.descricao }} <span class="apoio">{{ p.numero }}/{{ p.total }}</span></span>
+        <span class="sub {% if atrasada %}negativo{% endif %}">{% if atrasada %}venceu {% else %}vence {% endif %}{{ p.vencimento | dia_mes }} · <span class="num">{{ p.valor }}</span></span>
+      </div>
+      <form method="post" action="/parcelas/{{ p.parcelamento_id }}/pagar">
+        <input type="hidden" name="numero" value="{{ p.numero }}">
+        <button type="submit" class="botao contorno pequeno">Pagar</button>
+      </form>
+    </div>
+  {% endfor %}
+</div>
 {% endif %}
 
+{% if parcelamentos %}
+<h2 class="titulo-secao">Contratos</h2>
 {% for p in parcelamentos %}
-<details class="bloco">
+<details class="cartao" style="margin-top:{{ '0' if loop.first else '12px' }}">
   <summary>
-    <strong>{{ p.descricao }}</strong> · {{ p.parcelas_pagas }}/{{ p.total_parcelas }} pagas ·
-    {% if p.quitado %}<span class="positivo">quitado</span>{% else %}falta {{ p.falta_pagar }}{% endif %}
-    {% if p.esta_atrasado(hoje) %}<span class="negativo">· atrasado</span>{% endif %}
+    <span class="ladrilho">🧾</span>
+    <span class="meio" style="flex:1; min-width:0">
+      <span class="titulo" style="display:block; font-weight:500">{{ p.descricao }}</span>
+      <span class="sub" style="display:block; font-size:15px; color:var(--suave)">
+        {{ p.parcelas_pagas }}/{{ p.total_parcelas }} pagas ·
+        {% if p.quitado %}<span class="positivo">quitado</span>{% else %}falta {{ p.falta_pagar }}{% endif %}
+        {% if p.esta_atrasado(hoje) %}<span class="negativo"> · atrasado</span>{% endif %}
+      </span>
+      <span class="barra" style="display:block"><span style="width: {{ (p.parcelas_pagas * 100 / p.total_parcelas) | round }}%"></span></span>
+    </span>
+    <span class="seta">{{ icone("proximo") }}</span>
   </summary>
-  <ul class="lista">
-    {% for parcela in p.cronograma() %}
-      <li class="{{ parcela.status(hoje) }}">
-        <span>{{ parcela.numero }}/{{ parcela.total }} · {{ parcela.vencimento | data }}</span>
-        <span>{{ parcela.valor }} · {{ parcela.status(hoje) }}</span>
-      </li>
-    {% endfor %}
-  </ul>
+  {% for parcela in p.cronograma() %}
+    {% set st = parcela.status(hoje) %}
+    <div class="linha">
+      <span class="num apoio" style="width:44px">{{ parcela.numero }}/{{ parcela.total }}</span>
+      <span class="meio">{{ parcela.vencimento | data }}</span>
+      <span class="num">{{ parcela.valor }}</span>
+      <span class="rotulo {% if st == 'paga' %}positivo{% elif st == 'atrasada' %}negativo{% endif %}" style="width:84px; text-align:right">{{ st }}</span>
+    </div>
+  {% endfor %}
 </details>
-{% else %}
-<p class="vazio">Nenhum parcelamento cadastrado.</p>
 {% endfor %}
+{% endif %}
+
+<details class="cartao" {% if not parcelamentos %}open{% endif %}>
+  <summary><span class="ladrilho">{{ icone("mais") }}</span><strong>Novo parcelamento</strong><span class="seta">{{ icone("proximo") }}</span></summary>
+  <form method="post" action="/parcelas" class="formulario">
+    <input name="valor_total" class="valor-grande" placeholder="R$ 0,00" inputmode="decimal" required aria-label="Valor total">
+    <input name="descricao" placeholder="O que foi comprado?" required aria-label="Descrição">
+    <div class="dupla">
+      <input name="total_parcelas" type="number" min="1" max="420" placeholder="Nº de parcelas" required aria-label="Número de parcelas">
+      <input name="primeiro_vencimento" type="date" value="{{ hoje.isoformat() }}" required aria-label="Primeiro vencimento">
+    </div>
+    <button type="submit" class="botao">Criar parcelamento</button>
+  </form>
+</details>
 {% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Caixinhas{% endblock %}
+{% block conteudo %}
+<section class="bloco">
+  <h2>Nova caixinha</h2>
+  <form method="post" action="/caixinhas" class="formulario">
+    <input name="icone" value="📦" maxlength="4" class="curto" aria-label="Ícone">
+    <input name="nome" placeholder="Nome (ex.: Mercado)" required>
+    <select name="tipo">
+      {% for chave, nome in tipos.items() %}<option value="{{ chave }}">{{ nome }}</option>{% endfor %}
+    </select>
+    <input name="aporte" placeholder="Aporte por ciclo (vazio = sem aporte)" inputmode="decimal">
+    <button type="submit">Criar</button>
+  </form>
+  <p class="ajuda">
+    <strong>Conta fixa</strong>: valor previsível (aluguel). <strong>Variável</strong>: oscila (mercado, lazer).
+    <strong>Reserva</strong>: dinheiro guardado. Sem aporte, os gastos saem direto do dinheiro livre.
+  </p>
+</section>
+
+<section class="bloco">
+  <h2>Caixinhas neste ciclo</h2>
+  <ul class="lista">
+    {% for l in r.linhas %}
+      <li>
+        <span>
+          <strong>{{ l.caixinha.icone }} {{ l.caixinha.nome }}</strong>
+          <small>{{ l.caixinha.nome_do_tipo }} · aporte {{ l.caixinha.aporte or "—" }} · disponível {{ l.disponivel }}</small>
+        </span>
+        <form method="post" action="/caixinhas/{{ l.caixinha.id }}/excluir">
+          <button class="discreto" type="submit" title="Excluir">✕</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="vazio">Nenhuma caixinha ainda.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

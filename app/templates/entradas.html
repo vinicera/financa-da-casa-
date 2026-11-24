@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Entradas{% endblock %}
+{% block conteudo %}
+{% include "_ciclo.html" %}
+
+<section class="bloco">
+  <form method="post" action="/entradas" class="formulario">
+    <input type="hidden" name="voltar" value="{{ url_atual }}">
+    <input name="descricao" placeholder="Descrição (ex.: Salário)" required>
+    <input name="valor" placeholder="Valor" inputmode="decimal" required>
+    <input name="data" type="date" value="{{ hoje.isoformat() }}" required>
+    <select name="natureza">
+      {% for chave, nome in naturezas.items() %}<option value="{{ chave }}">{{ nome }}</option>{% endfor %}
+    </select>
+    <button type="submit">Lançar entrada</button>
+  </form>
+</section>
+
+<section class="bloco">
+  <h2>{{ entradas | length }} entrada(s) · {{ total }}</h2>
+  <ul class="lista">
+    {% for e in entradas %}
+      <li>
+        <span><strong>{{ e.descricao }}</strong><small>{{ e.data | data }} · {{ naturezas[e.natureza] }}</small></span>
+        <span class="acoes positivo">
+          +{{ e.valor }}
+          <form method="post" action="/entradas/{{ e.id }}/excluir">
+            <input type="hidden" name="voltar" value="{{ url_atual }}">
+            <button class="discreto" type="submit" title="Excluir">✕</button>
+          </form>
+        </span>
+      </li>
+    {% else %}
+      <li class="vazio">Nenhuma entrada neste ciclo.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

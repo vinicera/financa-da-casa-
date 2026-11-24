@@ -1,0 +1,8 @@
+<div class="ciclo-nav">
+  <a href="?ciclo={{ ciclo.anterior().inicio.isoformat() }}" aria-label="Ciclo anterior">‹</a>
+  <div>
+    <strong>{{ ciclo.rotulo }}</strong>
+    <small>{{ ciclo.intervalo }}</small>
+  </div>
+  <a href="?ciclo={{ ciclo.proximo().inicio.isoformat() }}" aria-label="Próximo ciclo">›</a>
+</div>

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block titulo %}Resumo{% endblock %}
+{% block conteudo %}
+{% include "_ciclo.html" %}
+
+<section class="destaque">
+  <p class="rotulo">Dinheiro livre</p>
+  <p class="grande {% if r.excedente %}negativo{% endif %}">{{ r.livre }}</p>
+  {% if r.excedente %}
+    <p class="negativo">O que foi comprometido passou {{ r.excedente }} do que entrou.</p>
+  {% elif ciclo.contem(hoje) and r.livre %}
+    <p>Dá para gastar <strong>{{ r.livre_por_dia }}</strong> por dia até {{ ciclo.fim | dia_mes }}.</p>
+  {% endif %}
+</section>
+
+<section class="cartoes">
+  <div class="cartao"><p class="rotulo">Entrou</p><p class="valor">{{ r.entrou }}</p>
+    {% if r.extras %}<small>{{ r.renda }} renda + {{ r.extras }} extra</small>{% endif %}</div>
+  <div class="cartao"><p class="rotulo">Gasto</p><p class="valor">{{ r.gasto_total }}</p></div>
+  <div class="cartao"><p class="rotulo">Comprometido</p><p class="valor">{{ r.alocado }}</p>
+    <small>aportes + gastos fora do previsto</small></div>
+</section>
+
+{% if r.previsto %}
+<section class="bloco">
+  <h2>Ritmo do ciclo</h2>
+  <p>Dia {{ r.dia }} de {{ ciclo.total_dias }} ({{ r.pct_do_ciclo }}% do ciclo) ·
+     {{ r.gasto_no_previsto }} de {{ r.previsto }} previstos ({{ r.pct_gasto }}%).</p>
+  <div class="barra dupla">
+    <span class="tempo" style="width: {{ [r.pct_do_ciclo, 100] | min }}%"></span>
+    <span class="gasto {{ r.situacao }}" style="width: {{ [r.pct_gasto, 100] | min }}%"></span>
+  </div>
+  <p class="situacao {{ r.situacao }}">
+    {% if r.situacao == "adiantado" %}Gastando mais rápido do que o ciclo anda.
+    {% elif r.situacao == "sobrando" %}Gastando abaixo do ritmo — sobra folga.
+    {% else %}No ritmo.{% endif %}
+  </p>
+</section>
+{% endif %}
+
+<section class="bloco">
+  <h2>Caixinhas</h2>
+  {% for l in r.linhas %}
+    <div class="linha-caixinha">
+      <span class="icone">{{ l.caixinha.icone }}</span>
+      <div class="info">
+        <strong>{{ l.caixinha.nome }}</strong>
+        <small>{{ l.dica }}</small>
+        {% if l.caixinha.aporte %}
+        <div class="barra"><span class="{% if l.estourou %}estouro{% endif %}" style="width: {{ [l.percentual, 100] | min }}%"></span></div>
+        {% endif %}
+      </div>
+      <span class="valor">{{ l.gasto }}{% if l.caixinha.aporte %}<small> / {{ l.caixinha.aporte }}</small>{% endif %}</span>
+    </div>
+  {% else %}
+    <p class="vazio">Nenhuma caixinha ainda. <a href="/caixinhas">Criar a primeira</a>.</p>
+  {% endfor %}
+  {% if r.gasto_sem_caixinha %}
+    <div class="linha-caixinha"><span class="icone">❔</span>
+      <div class="info"><strong>Sem caixinha</strong><small>Saiu direto do livre.</small></div>
+      <span class="valor">{{ r.gasto_sem_caixinha }}</span></div>
+  {% endif %}
+</section>
+
+<section class="bloco">
+  <h2>Lançar gasto</h2>
+  <form method="post" action="/gastos" class="formulario">
+    <input type="hidden" name="voltar" value="{{ url_atual }}">
+    <input name="descricao" placeholder="Descrição" required>
+    <input name="valor" placeholder="Valor (ex.: 45,90)" inputmode="decimal" required>
+    <input name="data" type="date" value="{{ hoje.isoformat() }}" required>
+    <select name="caixinha_id">
+      <option value="">Sem caixinha</option>
+      {% for c in casa.caixinhas %}<option value="{{ c.id }}">{{ c.icone }} {{ c.nome }}</option>{% endfor %}
+    </select>
+    <button type="submit">Lançar</button>
+  </form>
+</section>
+
+{% if vencimentos %}
+<section class="bloco">
+  <h2>Próximos vencimentos</h2>
+  <ul class="lista">
+    {% for p in vencimentos %}
+      <li class="{{ p.status(hoje) }}"><span>{{ p.vencimento | data }} · {{ p.descricao }} {{ p.numero }}/{{ p.total }}</span><span>{{ p.valor }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<details class="bloco">
+  <summary>Configurações</summary>
+  <form method="post" action="/configuracao" class="formulario">
+    <label>Nome da casa <input name="nome" value="{{ casa.nome }}"></label>
+    <label>Ciclo começa no dia <input name="dia_inicio" type="number" min="1" max="31" value="{{ casa.dia_inicio_ciclo }}"></label>
+    <button type="submit">Salvar</button>
+  </form>
+</details>
+{% endblock %}

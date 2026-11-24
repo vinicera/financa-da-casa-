@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dados locais do usuário
+dados/
+
+# Segredos e configurações locais
+.env
+.env.*
+.claude/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

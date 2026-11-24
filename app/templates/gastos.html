@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Gastos{% endblock %}
+{% block conteudo %}
+{% include "_ciclo.html" %}
+
+<section class="bloco">
+  <form method="post" action="/gastos" class="formulario">
+    <input type="hidden" name="voltar" value="{{ url_atual }}">
+    <input name="descricao" placeholder="Descrição" required>
+    <input name="valor" placeholder="Valor (ex.: 45,90)" inputmode="decimal" required>
+    <input name="data" type="date" value="{{ hoje.isoformat() }}" required>
+    <select name="caixinha_id">
+      <option value="">Sem caixinha</option>
+      {% for c in casa.caixinhas %}<option value="{{ c.id }}">{{ c.icone }} {{ c.nome }}</option>{% endfor %}
+    </select>
+    <button type="submit">Lançar gasto</button>
+  </form>
+</section>
+
+<section class="bloco">
+  <div class="cabecalho-lista">
+    <h2>{{ gastos | length }} gasto(s) · {{ total }}</h2>
+    <form method="get">
+      <input type="hidden" name="ciclo" value="{{ ciclo.inicio.isoformat() }}">
+      <select name="ordem" onchange="this.form.submit()">
+        {% for chave, nome in ordens.items() %}
+          <option value="{{ chave }}" {% if chave == ordem %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button type="submit">Ordenar</button></noscript>
+    </form>
+  </div>
+  <ul class="lista">
+    {% for g in gastos %}
+      {% set cx = casa.buscar_caixinha(g.caixinha_id) %}
+      <li>
+        <span>
+          <strong>{{ g.descricao }}</strong>
+          <small>{{ g.data | data }} · {{ cx.icone ~ " " ~ cx.nome if cx else "Sem caixinha" }}</small>
+        </span>
+        <span class="acoes">
+          {{ g.valor }}
+          <form method="post" action="/gastos/{{ g.id }}/excluir">
+            <input type="hidden" name="voltar" value="{{ url_atual }}">
+            <button class="discreto" type="submit" title="Excluir">✕</button>
+          </form>
+        </span>
+      </li>
+    {% else %}
+      <li class="vazio">Nenhum gasto neste ciclo.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}{% endblock %} · Finança da Casa</title>
+  <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="/">🏡 {{ casa.nome }}</a>
+    <nav>
+      {% for url, nome in [("/", "Resumo"), ("/gastos", "Gastos"), ("/entradas", "Entradas"), ("/caixinhas", "Caixinhas"), ("/parcelas", "Parcelas")] %}
+        <a href="{{ url }}" {% if caminho == url %}class="ativo"{% endif %}>{{ nome }}</a>
+      {% endfor %}
+    </nav>
+    <form method="post" action="/desfazer" class="desfazer">
+      <input type="hidden" name="voltar" value="{{ url_atual }}">
+      <button type="submit" {% if not casa.pode_desfazer %}disabled{% endif %}
+        title="{% if casa.ultima_acao %}Desfazer: {{ casa.ultima_acao.descricao }}{% else %}Nada para desfazer{% endif %}">↶ Desfazer</button>
+    </form>
+  </header>
+
+  <main>
+    {% if erro %}<p class="aviso erro">{{ erro }}</p>{% endif %}
+    {% if ok %}<p class="aviso ok">{{ ok }}</p>{% endif %}
+    {% block conteudo %}{% endblock %}
+  </main>
+
+  <footer>Finança da Casa · <a href="/docs">API</a></footer>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titulo %}Parcelas{% endblock %}
+{% block conteudo %}
+<section class="bloco">
+  <h2>Novo parcelamento</h2>
+  <form method="post" action="/parcelas" class="formulario">
+    <input name="descricao" placeholder="Descrição (ex.: Geladeira)" required>
+    <input name="valor_total" placeholder="Valor total" inputmode="decimal" required>
+    <input name="total_parcelas" type="number" min="1" max="420" placeholder="Nº de parcelas" required>
+    <label>1º vencimento <input name="primeiro_vencimento" type="date" value="{{ hoje.isoformat() }}" required></label>
+    <button type="submit">Criar</button>
+  </form>
+</section>
+
+{% if vencimentos %}
+<section class="bloco">
+  <h2>Próximos vencimentos</h2>
+  <ul class="lista">
+    {% for p in vencimentos %}
+      <li class="{{ p.status(hoje) }}">
+        <span><strong>{{ p.descricao }} {{ p.numero }}/{{ p.total }}</strong>
+          <small>vence {{ p.vencimento | data }}{% if p.status(hoje) == "atrasada" %} · atrasada{% endif %}</small></span>
+        <span class="acoes">{{ p.valor }}
+          <form method="post" action="/parcelas/{{ p.parcelamento_id }}/pagar">
+            <input type="hidden" name="numero" value="{{ p.numero }}">
+            <button type="submit">Pagar</button>
+          </form>
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% for p in parcelamentos %}
+<details class="bloco">
+  <summary>
+    <strong>{{ p.descricao }}</strong> · {{ p.parcelas_pagas }}/{{ p.total_parcelas }} pagas ·
+    {% if p.quitado %}<span class="positivo">quitado</span>{% else %}falta {{ p.falta_pagar }}{% endif %}
+    {% if p.esta_atrasado(hoje) %}<span class="negativo">· atrasado</span>{% endif %}
+  </summary>
+  <ul class="lista">
+    {% for parcela in p.cronograma() %}
+      <li class="{{ parcela.status(hoje) }}">
+        <span>{{ parcela.numero }}/{{ parcela.total }} · {{ parcela.vencimento | data }}</span>
+        <span>{{ parcela.valor }} · {{ parcela.status(hoje) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</details>
+{% else %}
+<p class="vazio">Nenhum parcelamento cadastrado.</p>
+{% endfor %}
+{% endblock %}
